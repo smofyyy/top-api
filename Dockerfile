@@ -1,8 +1,23 @@
-FROM node:16
-WORKDIR /opt/app
-ADD package.json package.json
+# этап сборки
+FROM node:14-alpine as build
+
+WORKDIR /app
+
+COPY package*.json ./
 RUN npm install
-ADD . .
+
+COPY . .
+
 RUN npm run build
-RUN npm prune --production
-CMD ["node", "./dist/main.js"]
+
+# этап сборки конечного образа
+FROM node:14-alpine
+
+WORKDIR /app
+
+COPY --from=build /app/package*.json ./
+RUN npm install --only=production
+
+COPY --from=build /app/dist ./dist
+
+CMD ["npm", "start"]
